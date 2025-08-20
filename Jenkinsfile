@@ -79,7 +79,7 @@ spec:
     stage('Update GitOps Tag & Push') {
       steps {
         container('tools') {
-          withCredentials([usernamePassword(credentialsId: 'pat', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
+          withCredentials([usernamePassword(credentialsId: 'usernamepat', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
               apk add --no-cache git curl || true
               # yq 설치(선택)
