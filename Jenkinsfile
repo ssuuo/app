@@ -41,7 +41,7 @@ spec:
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
     VALUES_FILE   = 'charts/myapp/values.yaml'
-    REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"
+    REPO_PULL     = "localhost:30080/project/myapp"
   }
 
   stages {
