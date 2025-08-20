@@ -34,15 +34,23 @@ spec:
   }
 
   environment {
-    REGISTRY = '172.18.0.2:30443'
-    IMAGE_REPO = 'project/myapp'  
+    // REGISTRY = '172.18.0.2:30443'
+    // IMAGE_REPO = 'project/myapp'  
 
-    GITOPS_REPO = 'https://github.com/ssuuo/git.git'
-    GITOPS_BRANCH = 'main'  
-    VALUES_FILE   = 'charts/myapp/values.yaml'  // GitOps repo 안에서 실제 수정할 values.yaml 경로
-    REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"  // k8s 매니페스트에서 사용할 이미지 레포지토리
+    // GITOPS_REPO = 'https://github.com/ssuuo/git.git'
+    // GITOPS_BRANCH = 'main'  
+    // VALUES_FILE   = 'charts/myapp/values.yaml'  // GitOps repo 안에서 실제 수정할 values.yaml 경로
+    // REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"  // k8s 매니페스트에서 사용할 이미지 레포지토리
 
-    KANIKO_EXTRA = '--skip-tls-verify-registry=172.18.0.2:30443 --insecure --insecure-registry=172.18.0.2:30443'
+    // KANIKO_EXTRA = '--skip-tls-verify-registry=172.18.0.2:30443 --insecure --insecure-registry=172.18.0.2:30443'
+
+    REGISTRY      = 'harbor.harbor.svc.cluster.local'
+    IMAGE_REPO    = 'project/myapp'
+
+    GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
+    GITOPS_BRANCH = 'main'
+    VALUES_FILE   = 'charts/myapp/values.yaml'
+    REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"
   }
 
   stages {
@@ -71,6 +79,15 @@ spec:
               printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
                 "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
               cat /kaniko/.docker/config.json
+
+              // /kaniko/executor \
+              //   --dockerfile Dockerfile \
+              //   --context ${PWD} \
+              //   --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
+              //   --cache=true \
+              //   ${KANIKO_EXTRA} \
+              //   --verbosity=debug
+
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
