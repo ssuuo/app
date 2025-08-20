@@ -34,19 +34,10 @@ spec:
   }
 
   environment {
-    // REGISTRY = '172.18.0.2:30443'
-    // IMAGE_REPO = 'project/myapp'  
-
-    // GITOPS_REPO = 'https://github.com/ssuuo/git.git'
-    // GITOPS_BRANCH = 'main'  
-    // VALUES_FILE   = 'charts/myapp/values.yaml'  // GitOps repo 안에서 실제 수정할 values.yaml 경로
-    // REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"  // k8s 매니페스트에서 사용할 이미지 레포지토리
-
-    // KANIKO_EXTRA = '--skip-tls-verify-registry=172.18.0.2:30443 --insecure --insecure-registry=172.18.0.2:30443'
-
-    REGISTRY      = 'harbor-registry.harbor.svc.cluster.local:5000'
+ 
+    REGISTRY      = 'harbor-core.harbor.svc.cluster.local:80'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor.harbor.svc.cluster.local'
+    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-core.harbor.svc.cluster.local:80'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
