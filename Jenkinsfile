@@ -65,7 +65,7 @@ spec:
             sh '''
               set -eux
 
-              mkdir -p /kaniko/.docke
+              mkdir -p /kaniko/.docker
               
               AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
 
