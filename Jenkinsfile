@@ -46,6 +46,7 @@ spec:
 
     REGISTRY      = 'harbor.harbor.svc.cluster.local'
     IMAGE_REPO    = 'project/myapp'
+    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor.harbor.svc.cluster.local'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
@@ -87,6 +88,8 @@ spec:
               //   --cache=true \
               //   ${KANIKO_EXTRA} \
               //   --verbosity=debug
+
+              KANIKO_EXTRA="${KANIKO_EXTRA:-}"
 
 
               /kaniko/executor \
