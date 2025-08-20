@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Pod
 spec:
   hostAliases:
-  - ip: "172.18.0.4"         # ← harbor.local 이 가리킬 IP
+  - ip: "172.18.0.4"         
     hostnames:
     - "harbor.local"
   containers:
