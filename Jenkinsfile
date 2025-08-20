@@ -34,9 +34,9 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'harbor-core.harbor.svc.cluster.local'
+    REGISTRY      = '10.96.143.202:80'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-core.harbor.svc.cluster.local'
+    KANIKO_EXTRA = '--insecure --insecure-registry=10.96.143.202:80'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
@@ -87,7 +87,7 @@ spec:
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
                 --cache=true \\
-                --skip-tls-verify \\
+                --insecure --insecure-registry=${REGISTRY} \\
                 --verbosity=debug
             '''
           }
