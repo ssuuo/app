@@ -34,9 +34,9 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'harbor-registry.harbor.svc.cluster.local:5000'
+    REGISTRY      = 'harbor-core.harbor.svc.cluster.local'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = "--insecure --insecure-registry=${REGISTRY}"
+    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-core.harbor.svc.cluster.local'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
@@ -66,32 +66,27 @@ spec:
               set -eux
 
               mkdir -p /kaniko/.docker
-              
-              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
 
+              # base64 auth (username:password)
+              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\\n')
 
+              # registry + core 자격증명
               printf '{
-                "auths": {
-                  "%s": {
-                    "auth": "%s"
-                  },
-                "harbor-core.harbor.svc.cluster.local": {
-                  "auth": "%s"
-                }
-                }
-
-              }' "${REGISTRY}" "${AUTH_B64}" "${AUTH_B64}" > /kaniko/.docker/config.json
+  "auths": {
+    "%s": {
+      "auth": "%s"
+    }
+  }
+}' "${REGISTRY}" "${AUTH_B64}" > /kaniko/.docker/config.json
 
               cat /kaniko/.docker/config.json
 
-            
-
+              # Kaniko 실행
               /kaniko/executor \\
                 --dockerfile Dockerfile \\
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
                 --cache=true \\
-                --insecure --insecure-registry=${REGISTRY} \\
                 --skip-tls-verify \\
                 --verbosity=debug
             '''
