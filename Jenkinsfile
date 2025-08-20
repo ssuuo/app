@@ -34,7 +34,6 @@ spec:
   }
 
   environment {
- 
     REGISTRY      = 'harbor-registry.harbor.svc.cluster.local:5000'
     IMAGE_REPO    = 'project/myapp'
     KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-registry.harbor.svc.cluster.local:5000'
@@ -48,8 +47,6 @@ spec:
   stages {
     stage('Checkout App') {
       steps {
-        // app-repo에서 Jenkinsfile 실행 중이라면 생략 가능
-        // 멀티브랜치가 아니면 명시:
         git branch: 'main', url: 'https://github.com/ssuuo/app.git'
         script {
           env.SHORT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
@@ -60,7 +57,8 @@ spec:
         }
       }
     }
-    stage('Build & Push (Kaniko)') {
+    
+    stage('Build & Push to Harbor') {
       steps {
         container('kaniko') {
           withCredentials([usernamePassword(credentialsId: 'harbor-robot', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
@@ -73,7 +71,6 @@ spec:
               cat /kaniko/.docker/config.json
 
               KANIKO_EXTRA="${KANIKO_EXTRA:-}"
-
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
@@ -88,14 +85,14 @@ spec:
       }
     }
 
-    stage('Update GitOps Tag & Push') {
+    stage('Update GitOps Repository') {
       steps {
         container('tools') {
           withCredentials([usernamePassword(credentialsId: 'usernamepat', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
               set -eux
               apk add --no-cache git curl
-              # yq 설치(선택)
+              # yq 설치
               curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
                 -o /usr/local/bin/yq
               chmod +x /usr/local/bin/yq
@@ -122,6 +119,18 @@ spec:
           }
         }
       }
+    }
+  }
+
+  post {
+    always {
+      echo 'Pipeline completed!'
+    }
+    success {
+      echo "✅ Successfully built and pushed ${env.DEST}"
+    }
+    failure {
+      echo "❌ Pipeline failed!"
     }
   }
 }
