@@ -81,14 +81,6 @@ spec:
                 "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
               cat /kaniko/.docker/config.json
 
-              // /kaniko/executor \
-              //   --dockerfile Dockerfile \
-              //   --context ${PWD} \
-              //   --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
-              //   --cache=true \
-              //   ${KANIKO_EXTRA} \
-              //   --verbosity=debug
-
               KANIKO_EXTRA="${KANIKO_EXTRA:-}"
 
 
