@@ -34,14 +34,14 @@ spec:
   }
 
   environment {
-    REGISTRY      = '172.18.0.4:30443'
+    REGISTRY      = 'harbor.local:30443'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = '--skip-tls-verify'
+    KANIKO_EXTRA = "--skip-tls-verify --skip-tls-verify-registry=harbor.local:30443"
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
     VALUES_FILE   = 'charts/myapp/values.yaml'
-    REPO_PULL     = "172.18.0.4:30443/project/myapp"
+    REPO_PULL    = "${REGISTRY}/${IMAGE_REPO}"
   }
 
   stages {
@@ -68,16 +68,16 @@ spec:
               mkdir -p /kaniko/.docker
 
               # base64 auth (username:password)
-              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\\n')
+              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
 
               # registry + token 서버 자격증명
               printf '{
-  "auths": {
-    "%s": {
-      "auth": "%s"
-    }
-  }
-}' "${REGISTRY}" "${AUTH_B64}" "${AUTH_B64}" > /kaniko/.docker/config.json
+                "auths": {
+                  "%s": {
+                  "auth": "%s"
+                 }
+                }
+              }\n' "$REGISTRY" "$AUTH_B64" > /kaniko/.docker/config.json
 
               cat /kaniko/.docker/config.json
 
