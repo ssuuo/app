@@ -65,19 +65,35 @@ spec:
             sh '''
               set -eux
 
-              mkdir -p /kaniko/.docker
-              printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
-                "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
+              mkdir -p /kaniko/.docke
+              
+              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
+
+
+              cat > /kaniko/.docker/config.json <<EOF
+              {
+                "auths": {
+                  "${REGISTRY}": {
+                    "auth": "${AUTH_B64}"
+                  },
+                  "harbor-core.harbor.svc.cluster.local": {
+                    "auth": "${AUTH_B64}"
+                  }
+                }
+              }
+              EOF
+
               cat /kaniko/.docker/config.json
 
-              KANIKO_EXTRA="${KANIKO_EXTRA:-}"
+            
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
                 --context ${PWD} \
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
                 --cache=true \
-                ${KANIKO_EXTRA} \
+                --insecure --insecure-registry=${REGISTRY} \
+                --skip-tls-verify \
                 --verbosity=debug
             '''
           }
