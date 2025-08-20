@@ -60,10 +60,14 @@ spec:
         container('kaniko') {
           withCredentials([usernamePassword(credentialsId: 'harbor-robot', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
             sh '''
+              set -eux
+              echo "PWD=$PWD"; ls -la
+              test -f Dockerfile
+
               mkdir -p /kaniko/.docker
-              cat > /kaniko/.docker/config.json <<EOF
-              {"auths":{"${REGISTRY}":{"username":"${HUSER}","password":"${HPASS}"}}}
-              EOF
+              printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
+                "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
+              cat /kaniko/.docker/config.json
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
@@ -82,22 +86,24 @@ spec:
         container('tools') {
           withCredentials([usernamePassword(credentialsId: 'usernamepat', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
-              apk add --no-cache git curl || true
+              set -eux
+              apk add --no-cache git curl
               # yq 설치(선택)
               curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
-                -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq || true
+                -o /usr/local/bin/yq
+              chmod +x /usr/local/bin/yq
 
               rm -rf gitops && mkdir gitops && cd gitops
               git config --global user.name "jenkins-bot"
               git config --global user.email "jenkins-bot@local"
-              git clone https://${GUSER}:${GTOKEN}@${GITOPS_REPO#https://} .
+
+              GUSER="${GUSER:-x-access-token}"
+              git clone "https://${GUSER}:${GTOKEN}@${GITOPS_REPO#https://}" .
               git checkout ${GITOPS_BRANCH}
 
-              if command -v yq >/dev/null 2>&1; then
-                yq -i ".image.tag = \\"${TAG}\\"" ${VALUES_FILE}
-              else
-                sed -i -E "s|(^[[:space:]]*tag:[[:space:]]*\").*(\"$)|\\1${TAG}\\2|" ${VALUES_FILE}
-              fi
+              test -f "${VALUES_FILE}"
+
+              TAG="${TAG}" /usr/local/bin/yq -i '.image.tag = strenv(TAG)' "${VALUES_FILE}"
 
               git add ${VALUES_FILE}
               git commit -m "chore: update image tag to ${TAG} (${DEST})" || echo "no changes"
