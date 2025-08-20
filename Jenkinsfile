@@ -44,7 +44,7 @@ spec:
 
     // KANIKO_EXTRA = '--skip-tls-verify-registry=172.18.0.2:30443 --insecure --insecure-registry=172.18.0.2:30443'
 
-    REGISTRY      = 'harbor.harbor.svc.cluster.local'
+    REGISTRY      = 'harbor-registry.harbor.svc.cluster.local:5000'
     IMAGE_REPO    = 'project/myapp'
     KANIKO_EXTRA = '--skip-tls-verify-registry=harbor.harbor.svc.cluster.local'
 
