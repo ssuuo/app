@@ -12,9 +12,10 @@ spec:
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     tty: true
     command:
-    - /busybox/sh
+    - /busybox/busybox
+    - sh
     - -c
-    - sleep 365d
+    - tail -f /dev/null
     volumeMounts:
     - name: kaniko-cache
       mountPath: /kaniko/cache
@@ -24,7 +25,7 @@ spec:
     command:
     - /bin/sh
     - -c
-    - sleep 365d
+    - tail -f /dev/null
   volumes:
   - name: kaniko-cache
     emptyDir: {}
