@@ -34,17 +34,15 @@ spec:
   }
 
   environment {
-    HARBOR_HOST = 'harbor.harbor.svc.cluster.local' // core(nginx) 서비스
-    HARBOR_REPO = 'project/myapp'
-    IMAGE_TAG   = '10'
+    REGISTRY = '172.18.0.2:30443'
+    IMAGE_REPO = 'project/myapp'  
 
     GITOPS_REPO = 'https://github.com/ssuuo/git.git'
-    GITOPS_BRANCH = 'main'   // ← 여기가 빠져서 에러 발생했음
+    GITOPS_BRANCH = 'main'  
     VALUES_FILE   = 'charts/myapp/values.yaml'  // GitOps repo 안에서 실제 수정할 values.yaml 경로
-    REPO_PULL     = '172.18.0.2:30443/project/myapp'  // k8s 매니페스트에서 사용할 이미지 레포지토리
-    TAG           = "${IMAGE_TAG}"  // Kaniko에서 만든 태그를 그대로 씀
-    DEST          = "${HARBOR_HOST}/${HARBOR_REPO}:${IMAGE_TAG}" // 커밋 메시지용
+    REPO_PULL     = "${REGISTRY}/${IMAGE_REPO}"  // k8s 매니페스트에서 사용할 이미지 레포지토리
 
+    KANIKO_EXTRA = '--skip-tls-verify-registry=172.18.0.2:30443 --insecure --insecure-registry=172.18.0.2:30443'
   }
 
   stages {
@@ -53,10 +51,15 @@ spec:
         // app-repo에서 Jenkinsfile 실행 중이라면 생략 가능
         // 멀티브랜치가 아니면 명시:
         git branch: 'main', url: 'https://github.com/ssuuo/app.git'
-        echo "Using workspace of app-repo"
+        script {
+          def short = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.IMAGE_TAG = "${env.BUILD_NUMBER}-${short}"    // 불변 태그!
+          env.TAG       = env.IMAGE_TAG                     // yq에서 사용
+          env.DEST      = "${env.REPO_PULL}:${env.IMAGE_TAG}"
+          echo "Using IMAGE_TAG=${env.IMAGE_TAG}"
+        }
       }
     }
-
     stage('Build & Push (Kaniko)') {
       steps {
         container('kaniko') {
@@ -66,16 +69,15 @@ spec:
 
               mkdir -p /kaniko/.docker
               printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
-                "${HARBOR_HOST}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
+                "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
               cat /kaniko/.docker/config.json
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
                 --context ${PWD} \
-                --destination ${HARBOR_HOST}/${HARBOR_REPO}:${IMAGE_TAG} \
+                --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
                 --cache=true \
-                --skip-tls-verify=true \
-                --skip-tls-verify-registry=${HARBOR_HOST} \
+                ${KANIKO_EXTRA} \
                 --verbosity=debug
             '''
           }
@@ -105,7 +107,7 @@ spec:
 
               test -f "${VALUES_FILE}"
 
-              REPO_PULL="${REPO_PULL}" TAG="${TAG}" /usr/local/bin/yq -i '
+              REPO_PULL="${REPO_PULL}" TAG="${TAG}" yq -i '
                 .image.repository = strenv(REPO_PULL) |
                 .image.tag        = strenv(TAG)
               ' "${VALUES_FILE}"
