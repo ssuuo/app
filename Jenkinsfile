@@ -34,9 +34,9 @@ spec:
   }
 
   environment {
-    REGISTRY      = '10.96.143.202:80'
+    REGISTRY      = 'localhost:30443'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = '--insecure --insecure-registry=10.96.143.202:80'
+    KANIKO_EXTRA = '--skip-tls-verify'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
