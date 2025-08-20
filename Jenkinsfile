@@ -11,14 +11,20 @@ spec:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:latest
     tty: true
-    command: ["cat"]
+    command:
+    - /busybox/sh
+    - -c
+    - sleep 365d
     volumeMounts:
     - name: kaniko-cache
       mountPath: /kaniko/cache
   - name: tools
     image: alpine:3.20
     tty: true
-    command: ["cat"]
+    command:
+    - /bin/sh
+    - -c
+    - sleep 365d
   volumes:
   - name: kaniko-cache
     emptyDir: {}
