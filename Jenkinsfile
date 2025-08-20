@@ -34,19 +34,10 @@ spec:
   }
 
   environment {
-    REGISTRY_PUSH = "harbor-registry.harbor.svc.cluster.local:5000"  // HTTP
-    // 배포용(외부) - 클러스터 노드/파드가 이미지 풀 때 사용할 호스트
-    REGISTRY_PULL = "harbor.127.0.0.1.nip.io"                        // 너가 쓰던 Ingress 호스트
+    HARBOR_HOST = 'harbor.harbor.svc.cluster.local' // core(nginx) 서비스
+    HARBOR_REPO = 'project/myapp'
+    IMAGE_TAG   = '10'
 
-    PROJECT  = "project"
-    IMAGE    = "myapp"
-    TAG      = "${env.BUILD_NUMBER}"
-
-    // Kaniko가 실제로 푸시할 대상
-    DEST     = "${REGISTRY_PUSH}/${PROJECT}/${IMAGE}:${TAG}"
-
-    // GitOps values.yaml 에 기록할 repository (외부 풀용)
-    REPO_PULL = "${REGISTRY_PULL}/${PROJECT}/${IMAGE}"
   }
 
   stages {
@@ -54,7 +45,7 @@ spec:
       steps {
         // app-repo에서 Jenkinsfile 실행 중이라면 생략 가능
         // 멀티브랜치가 아니면 명시:
-        // git branch: 'main', url: 'https://github.com/yourorg/app-repo.git'
+        git branch: 'main', url: 'https://github.com/ssuuo/app.git'
         echo "Using workspace of app-repo"
       }
     }
@@ -65,21 +56,20 @@ spec:
           withCredentials([usernamePassword(credentialsId: 'harbor-robot', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
             sh '''
               set -eux
-              echo "PWD=$PWD"; ls -la
-              test -f Dockerfile
 
               mkdir -p /kaniko/.docker
               printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
-                "${REGISTRY_PUSH}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
+                "${HARBOR_HOST}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
               cat /kaniko/.docker/config.json
 
               /kaniko/executor \
                 --dockerfile Dockerfile \
-                --context "${WORKSPACE}" \
-                --destination "${DEST}" \
+                --context ${PWD} \
+                --destination ${HARBOR_HOST}/${HARBOR_REPO}:${IMAGE_TAG} \
                 --cache=true \
-                --skip-tls-verify
-                --insecure
+                --skip-tls-verify=true \
+                --skip-tls-verify-registry=${HARBOR_HOST} \
+                --verbosity=debug
             '''
           }
         }
