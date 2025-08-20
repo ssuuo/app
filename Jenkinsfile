@@ -52,9 +52,9 @@ spec:
         // 멀티브랜치가 아니면 명시:
         git branch: 'main', url: 'https://github.com/ssuuo/app.git'
         script {
-          def short = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-          env.IMAGE_TAG = "${env.BUILD_NUMBER}-${short}"    // 불변 태그!
-          env.TAG       = env.IMAGE_TAG                     // yq에서 사용
+          env.SHORT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.SHORT_SHA}"
+          env.TAG       = env.IMAGE_TAG
           env.DEST      = "${env.REPO_PULL}:${env.IMAGE_TAG}"
           echo "Using IMAGE_TAG=${env.IMAGE_TAG}"
         }
