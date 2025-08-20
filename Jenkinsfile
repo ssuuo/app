@@ -34,14 +34,14 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'localhost:30443'
+    REGISTRY      = '172.18.0.4:30443'
     IMAGE_REPO    = 'project/myapp'
     KANIKO_EXTRA = '--skip-tls-verify'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
     VALUES_FILE   = 'charts/myapp/values.yaml'
-    REPO_PULL     = "localhost:30443/project/myapp"
+    REPO_PULL     = "172.18.0.4:30443/project/myapp"
   }
 
   stages {
@@ -75,9 +75,6 @@ spec:
   "auths": {
     "%s": {
       "auth": "%s"
-    },
-    "harbor.harbor.svc.cluster.local": {
-      "auth": "%s"
     }
   }
 }' "${REGISTRY}" "${AUTH_B64}" "${AUTH_B64}" > /kaniko/.docker/config.json
@@ -90,7 +87,6 @@ spec:
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
                 --cache=true \\
-                --insecure --insecure-registry=${REGISTRY} \\
                 --skip-tls-verify \\
                 --verbosity=debug
             '''
