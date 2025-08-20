@@ -37,11 +37,11 @@ spec:
     HARBOR_HOST = 'harbor.harbor.svc.cluster.local' // core(nginx) 서비스
     HARBOR_REPO = 'project/myapp'
     IMAGE_TAG   = '10'
-    
+
     GITOPS_REPO = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'   // ← 여기가 빠져서 에러 발생했음
     VALUES_FILE   = 'charts/myapp/values.yaml'  // GitOps repo 안에서 실제 수정할 values.yaml 경로
-    REPO_PULL     = '10.96.209.113:30443/project/myapp'  // k8s 매니페스트에서 사용할 이미지 레포지토리
+    REPO_PULL     = '172.18.0.2:30443/project/myapp'  // k8s 매니페스트에서 사용할 이미지 레포지토리
     TAG           = "${IMAGE_TAG}"  // Kaniko에서 만든 태그를 그대로 씀
     DEST          = "${HARBOR_HOST}/${HARBOR_REPO}:${IMAGE_TAG}" // 커밋 메시지용
 
