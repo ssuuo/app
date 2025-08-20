@@ -34,15 +34,19 @@ spec:
   }
 
   environment {
-    REGISTRY = "harbor.127.0.0.1.nip.io"
+    REGISTRY_PUSH = "harbor-registry.harbor.svc.cluster.local:5000"  // HTTP
+    // 배포용(외부) - 클러스터 노드/파드가 이미지 풀 때 사용할 호스트
+    REGISTRY_PULL = "harbor.127.0.0.1.nip.io"                        // 너가 쓰던 Ingress 호스트
+
     PROJECT  = "project"
     IMAGE    = "myapp"
     TAG      = "${env.BUILD_NUMBER}"
-    DEST     = "${REGISTRY}/${PROJECT}/${IMAGE}:${TAG}"
 
-    GITOPS_REPO   = "https://github.com/ssuuo/git.git"
-    GITOPS_BRANCH = "main"
-    VALUES_FILE   = "charts/myapp/values.yaml"
+    // Kaniko가 실제로 푸시할 대상
+    DEST     = "${REGISTRY_PUSH}/${PROJECT}/${IMAGE}:${TAG}"
+
+    // GitOps values.yaml 에 기록할 repository (외부 풀용)
+    REPO_PULL = "${REGISTRY_PULL}/${PROJECT}/${IMAGE}"
   }
 
   stages {
@@ -66,7 +70,7 @@ spec:
 
               mkdir -p /kaniko/.docker
               printf '{"auths":{"%s":{"username":"%s","password":"%s"}}}\n' \
-                "${REGISTRY}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
+                "${REGISTRY_PUSH}" "${HUSER}" "${HPASS}" > /kaniko/.docker/config.json
               cat /kaniko/.docker/config.json
 
               /kaniko/executor \
@@ -103,8 +107,11 @@ spec:
 
               test -f "${VALUES_FILE}"
 
-              TAG="${TAG}" /usr/local/bin/yq -i '.image.tag = strenv(TAG)' "${VALUES_FILE}"
-
+              REPO_PULL="${REPO_PULL}" TAG="${TAG}" /usr/local/bin/yq -i '
+                .image.repository = strenv(REPO_PULL) |
+                .image.tag        = strenv(TAG)
+              ' "${VALUES_FILE}"
+              
               git add ${VALUES_FILE}
               git commit -m "chore: update image tag to ${TAG} (${DEST})" || echo "no changes"
               git push origin ${GITOPS_BRANCH}
