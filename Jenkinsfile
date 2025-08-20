@@ -79,6 +79,7 @@ spec:
                 --destination "${DEST}" \
                 --cache=true \
                 --skip-tls-verify
+                --insecure
             '''
           }
         }
@@ -111,7 +112,7 @@ spec:
                 .image.repository = strenv(REPO_PULL) |
                 .image.tag        = strenv(TAG)
               ' "${VALUES_FILE}"
-              
+
               git add ${VALUES_FILE}
               git commit -m "chore: update image tag to ${TAG} (${DEST})" || echo "no changes"
               git push origin ${GITOPS_BRANCH}
