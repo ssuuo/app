@@ -70,30 +70,29 @@ spec:
               AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
 
 
-              cat > /kaniko/.docker/config.json <<EOF
-              {
+              printf '{
                 "auths": {
-                  "${REGISTRY}": {
-                    "auth": "${AUTH_B64}"
+                  "%s": {
+                    "auth": "%s"
                   },
-                  "harbor-core.harbor.svc.cluster.local": {
-                    "auth": "${AUTH_B64}"
-                  }
+                "harbor-core.harbor.svc.cluster.local": {
+                  "auth": "%s"
                 }
-              }
-              EOF
+                }
+
+              }' "${REGISTRY}" "${AUTH_B64}" "${AUTH_B64}" > /kaniko/.docker/config.json
 
               cat /kaniko/.docker/config.json
 
             
 
-              /kaniko/executor \
-                --dockerfile Dockerfile \
-                --context ${PWD} \
-                --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \
-                --cache=true \
-                --insecure --insecure-registry=${REGISTRY} \
-                --skip-tls-verify \
+              /kaniko/executor \\
+                --dockerfile Dockerfile \\
+                --context ${PWD} \\
+                --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
+                --cache=true \\
+                --insecure --insecure-registry=${REGISTRY} \\
+                --skip-tls-verify \\
                 --verbosity=debug
             '''
           }
