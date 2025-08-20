@@ -38,6 +38,8 @@ spec:
     HARBOR_REPO = 'project/myapp'
     IMAGE_TAG   = '10'
 
+    GITOPS_REPO = 'https://github.com/ssuuo/git.git'
+
   }
 
   stages {
