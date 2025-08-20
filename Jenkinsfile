@@ -35,9 +35,9 @@ spec:
 
   environment {
  
-    REGISTRY      = 'harbor-core.harbor.svc.cluster.local:80'
+    REGISTRY      = 'harbor-registry.harbor.svc.cluster.local:5000'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-core.harbor.svc.cluster.local:80'
+    KANIKO_EXTRA = '--skip-tls-verify-registry=harbor-registry.harbor.svc.cluster.local:5000'
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
