@@ -7,10 +7,6 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-  hostAliases:
-  - ip: "172.18.0.4"         
-    hostnames:
-    - "harbor.local"
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
