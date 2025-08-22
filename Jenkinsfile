@@ -61,7 +61,7 @@ spec:
     stage('Build & Push to Harbor') {
       steps {
         container('kaniko') {
-          withCredentials([usernamePassword(credentialsId: 'harbor-robot', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
+          withCredentials([usernamePassword(credentialsId: 'harbor-puller', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
             sh '''
               set -eux
 
