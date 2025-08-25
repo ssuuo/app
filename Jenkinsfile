@@ -91,7 +91,9 @@ spec:
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
                 --cache=true \\
-                --verbosity=debug
+                --verbosity=debug \\
+                --skip-tls-verify \\
+                --skip-tls-verify-registry=harbor.local:30443
             '''
           }
         }
