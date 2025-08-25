@@ -86,8 +86,7 @@ spec:
                 --dockerfile Dockerfile \\
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
-                --cache=true \\
-                --skip-tls-verify \\
+                --cache=true \\ 
                 --verbosity=debug
             '''
           }
