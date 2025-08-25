@@ -19,6 +19,12 @@ spec:
     volumeMounts:
     - name: kaniko-cache
       mountPath: /kaniko/cache
+    - name: harbor-ca
+      mountPath: /kaniko/ssl/certs
+      readOnly: true
+    env:
+    - name: SSL_CERT_DIR
+      value: /kaniko/ssl/certs
   - name: tools
     image: alpine:3.20
     tty: true
@@ -29,6 +35,9 @@ spec:
   volumes:
   - name: kaniko-cache
     emptyDir: {}
+  - name: harbor-ca
+    secret:
+      secretName: harbor-ca
 """
     }
   }
