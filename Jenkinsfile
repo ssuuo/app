@@ -34,7 +34,7 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'harbor.local:30443'
+    REGISTRY      = 'harbor.local'
     IMAGE_REPO    = 'project/myapp'
     KANIKO_EXTRA = "--skip-tls-verify --skip-tls-verify-registry=harbor.local:30443"
 
