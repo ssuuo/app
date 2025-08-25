@@ -35,7 +35,7 @@ spec:
 
   environment {
     REGISTRY      = 'harbor.local:30443'
-    IMAGE_REPO    = 'testproject/myapp'
+    IMAGE_REPO    = 'project/myapp'
     KANIKO_EXTRA = "--skip-tls-verify --skip-tls-verify-registry=harbor.local:30443"
 
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
@@ -98,7 +98,7 @@ spec:
     stage('Update GitOps Repository') {
       steps {
         container('tools') {
-          withCredentials([usernamePassword(credentialsId: 'usernamepat', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
+          withCredentials([usernamePassword(credentialsId: 'token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
               set -eux
               apk add --no-cache git curl
