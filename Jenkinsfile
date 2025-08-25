@@ -100,7 +100,6 @@ spec:
                 --context ${PWD} \\
                 --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
                 --cache=true \\
-                --skip-tls-verify\\
                 --verbosity=debug
             '''
           }
