@@ -21,7 +21,7 @@ spec:
   }
 
   environment {
-    REGISTRY   = 'harbor.harbor.svc.cluster.local'
+    REGISTRY   = 'harbor.harbor.svc.cluster.local'    // 내부 FQDN 통일
     IMAGE_REPO = 'project/myapp'
     IMAGE_TAG  = "${BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'manual'}"
   }
@@ -35,10 +35,10 @@ spec:
 set -eu
 
 echo "[info] REGISTRY=${REGISTRY}"
-echo "[info] IMAGE = ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}"
-echo "[info] USER  = ${HUSER}"
+echo "[info] IMAGE   = ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}"
+echo "[info] USER    = ${HUSER}"
 
-
+# Docker config.json 생성 (auths 키 == REGISTRY 와 완전히 동일)
 mkdir -p /kaniko/.docker
 AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\\n')
 printf '{
@@ -50,11 +50,12 @@ printf '{
 echo "==== /kaniko/.docker/config.json ===="
 cat /kaniko/.docker/config.json
 
-
+# (옵션) 헤더 확인 (401이면 정상: 토큰 요구)
 echo "[probe] HEAD https://${REGISTRY}/v2/"
 /busybox/wget -S --spider "https://${REGISTRY}/v2/" 2>&1 | /busybox/head -n 4 || true
 
-/kaniko/executor \
+# Kaniko 실행 (self-signed → TLS 검증 스킵)
+exec /kaniko/executor \
   --dockerfile Dockerfile \
   --context "${PWD}" \
   --destination "${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}" \
@@ -65,56 +66,6 @@ echo "[probe] HEAD https://${REGISTRY}/v2/"
           }
         }
       }
-    }
-  }
-}
-
-    stage('Update GitOps Repository') {
-      steps {
-        container('tools') {
-          withCredentials([usernamePassword(credentialsId: 'token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
-            sh '''
-              set -eux
-              apk add --no-cache git curl
-              # yq 설치
-              curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
-                -o /usr/local/bin/yq
-              chmod +x /usr/local/bin/yq
-
-              rm -rf gitops && mkdir gitops && cd gitops
-              git config --global user.name "jenkins-bot"
-              git config --global user.email "jenkins-bot@local"
-
-              GUSER="${GUSER:-x-access-token}"
-              git clone "https://${GUSER}:${GTOKEN}@${GITOPS_REPO#https://}" .
-              git checkout ${GITOPS_BRANCH}
-
-              test -f "${VALUES_FILE}"
-
-              REPO_PULL="${REPO_PULL}" TAG="${TAG}" yq -i '
-                .image.repository = strenv(REPO_PULL) |
-                .image.tag        = strenv(TAG)
-              ' "${VALUES_FILE}"
-
-              git add ${VALUES_FILE}
-              git commit -m "chore: update image tag to ${TAG} (${DEST})" || echo "no changes"
-              git push origin ${GITOPS_BRANCH}
-            '''
-          }
-        }
-      }
-    }
-  }
-
-  post {
-    always {
-      echo 'Pipeline completed!'
-    }
-    success {
-      echo "✅ Successfully built and pushed ${env.DEST}"
-    }
-    failure {
-      echo "❌ Pipeline failed!"
     }
   }
 }
