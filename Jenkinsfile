@@ -7,6 +7,9 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
+  hostAliases:
+  - ip: "172.18.0.2"   # docker inspect kind-control-plane 로 확인한 IP
+    hostnames: ["harbor.local"]
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
@@ -34,7 +37,7 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'harbor.harbor.svc.cluster.local'
+    REGISTRY      = 'harbor.local:30443'
     IMAGE_REPO    = 'project/myapp'
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
