@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Pod
 spec:
   hostAliases:
-  - ip: "172.18.0.2"   # docker inspect kind-control-plane 로 확인한 IP
+  - ip: "172.18.0.2" 
     hostnames: ["harbor.local"]
   containers:
   - name: kaniko
