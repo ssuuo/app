@@ -34,7 +34,7 @@ spec:
   }
 
   environment {
-    REGISTRY      = 'harbor.local:30443'
+    REGISTRY      = 'harbor.harbor.svc.cluster.local'
     IMAGE_REPO    = 'project/myapp'
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
