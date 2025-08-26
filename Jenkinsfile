@@ -7,10 +7,6 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
-  hostAliases:
-  - ip: "172.18.0.4"
-    hostnames:
-    - "harbor.local"
   containers:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
@@ -40,8 +36,6 @@ spec:
   environment {
     REGISTRY      = 'harbor.local:30443'
     IMAGE_REPO    = 'project/myapp'
-    KANIKO_EXTRA = "--skip-tls-verify --skip-tls-verify-registry=harbor.local:30443"
-
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
     VALUES_FILE   = 'charts/myapp/values.yaml'
@@ -93,7 +87,6 @@ spec:
                 --cache=true \\
                 --verbosity=debug \\
                 --skip-tls-verify \\
-                --skip-tls-verify-registry=harbor.local:30443
             '''
           }
         }
