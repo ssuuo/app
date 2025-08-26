@@ -11,61 +11,134 @@ spec:
   - name: kaniko
     image: gcr.io/kaniko-project/executor:v1.23.2-debug
     tty: true
-    command: ["/busybox/busybox","sh","-c","tail -f /dev/null"]
+    command:
+    - /busybox/busybox
+    - sh
+    - -c
+    - tail -f /dev/null
+    volumeMounts:
+    - name: kaniko-cache
+      mountPath: /kaniko/cache
   - name: tools
     image: alpine:3.20
     tty: true
-    command: ["/bin/sh","-c","tail -f /dev/null"]
+    command:
+    - /bin/sh
+    - -c
+    - tail -f /dev/null
+  volumes:
+  - name: kaniko-cache
+    emptyDir: {}
 """
     }
   }
 
   environment {
-    REGISTRY   = 'harbor.harbor.svc.cluster.local'    // 내부 FQDN 통일
-    IMAGE_REPO = 'project/myapp'
-    IMAGE_TAG  = "${BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'manual'}"
+    REGISTRY      = 'harbor.local:30443'
+    IMAGE_REPO    = 'project/myapp'
+    GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
+    GITOPS_BRANCH = 'main'
+    VALUES_FILE   = 'charts/myapp/values.yaml'
+    REPO_PULL    = "${REGISTRY}/${IMAGE_REPO}"
   }
 
   stages {
+    stage('Checkout App') {
+      steps {
+        git branch: 'main', url: 'https://github.com/ssuuo/app.git'
+        script {
+          env.SHORT_SHA = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.SHORT_SHA}"
+          env.TAG       = env.IMAGE_TAG
+          env.DEST      = "${env.REPO_PULL}:${env.IMAGE_TAG}"
+          echo "Using IMAGE_TAG=${env.IMAGE_TAG}"
+        }
+      }
+    }
+    
     stage('Build & Push to Harbor') {
       steps {
         container('kaniko') {
           withCredentials([usernamePassword(credentialsId: 'harbor-puller', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
-            sh '''#!/busybox/sh
-set -eu
+            sh '''
+              set -eux
 
-echo "[info] REGISTRY=${REGISTRY}"
-echo "[info] IMAGE   = ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}"
-echo "[info] USER    = ${HUSER}"
+              mkdir -p /kaniko/.docker
 
-# Docker config.json 생성 (auths 키 == REGISTRY 와 완전히 동일)
-mkdir -p /kaniko/.docker
-AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\\n')
-printf '{
-  "auths": {
-    "%s": { "auth": "%s" }
-  }
-}\n' "${REGISTRY}" "${AUTH_B64}" > /kaniko/.docker/config.json
+              # base64 auth (username:password)
+              AUTH_B64=$(printf "%s:%s" "${HUSER}" "${HPASS}" | base64 | tr -d '\n')
 
-echo "==== /kaniko/.docker/config.json ===="
-cat /kaniko/.docker/config.json
+              # registry + token 서버 자격증명
+              printf '{
+                "auths": {
+                  "%s": {
+                  "auth": "%s"
+                 }
+                }
+              }\n' "$REGISTRY" "$AUTH_B64" > /kaniko/.docker/config.json
 
-# (옵션) 헤더 확인 (401이면 정상: 토큰 요구)
-echo "[probe] HEAD https://${REGISTRY}/v2/"
-/busybox/wget -S --spider "https://${REGISTRY}/v2/" 2>&1 | /busybox/head -n 4 || true
+              cat /kaniko/.docker/config.json
 
-# Kaniko 실행 (self-signed → TLS 검증 스킵)
-exec /kaniko/executor \
-  --dockerfile Dockerfile \
-  --context "${PWD}" \
-  --destination "${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG}" \
-  --cache=true \
-  --verbosity=debug \
-  --skip-tls-verify
-'''
+              # Kaniko 실행
+              /kaniko/executor \\
+                --dockerfile Dockerfile \\
+                --context ${PWD} \\
+                --destination ${REGISTRY}/${IMAGE_REPO}:${IMAGE_TAG} \\
+                --cache=true \\
+                --verbosity=debug \\
+                --skip-tls-verify \\
+            '''
           }
         }
       }
+    }
+
+    stage('Update GitOps Repository') {
+      steps {
+        container('tools') {
+          withCredentials([usernamePassword(credentialsId: 'token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
+            sh '''
+              set -eux
+              apk add --no-cache git curl
+              # yq 설치
+              curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+                -o /usr/local/bin/yq
+              chmod +x /usr/local/bin/yq
+
+              rm -rf gitops && mkdir gitops && cd gitops
+              git config --global user.name "jenkins-bot"
+              git config --global user.email "jenkins-bot@local"
+
+              GUSER="${GUSER:-x-access-token}"
+              git clone "https://${GUSER}:${GTOKEN}@${GITOPS_REPO#https://}" .
+              git checkout ${GITOPS_BRANCH}
+
+              test -f "${VALUES_FILE}"
+
+              REPO_PULL="${REPO_PULL}" TAG="${TAG}" yq -i '
+                .image.repository = strenv(REPO_PULL) |
+                .image.tag        = strenv(TAG)
+              ' "${VALUES_FILE}"
+
+              git add ${VALUES_FILE}
+              git commit -m "chore: update image tag to ${TAG} (${DEST})" || echo "no changes"
+              git push origin ${GITOPS_BRANCH}
+            '''
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo 'Pipeline completed!'
+    }
+    success {
+      echo "✅ Successfully built and pushed ${env.DEST}"
+    }
+    failure {
+      echo "❌ Pipeline failed!"
     }
   }
 }
