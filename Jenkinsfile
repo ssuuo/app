@@ -97,30 +97,30 @@ spec:
       }
     }
     stage('Debug Harbor Token') {
-    environment {
-      REGISTRY    = 'harbor.harbor.svc.cluster.local'   // 지금 쓰는 것과 동일하게
-      IMAGE_REPO  = 'project/myapp'                     // 실제 경로
-    }
-    steps {
-      container('kaniko') {
-        withCredentials([usernamePassword(credentialsId: 'harbor-puller', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) { 
-          sh '''
-            set -eux
-            echo "REGISTRY=$REGISTRY IMAGE_REPO=$IMAGE_REPO HUSER=$HUSER"
-
-            curl -skI "https://${REGISTRY}/v2/" | head -n1
-
-            TOKEN_JSON=$(curl -sk -u "$HUSER:$HPASS" \
-              "https://${REGISTRY}/service/token?service=harbor-registry&scope=repository:${IMAGE_REPO}:push,pull")
-            echo "$TOKEN_JSON"
-
-            echo "$TOKEN_JSON" | grep -Eo '"name":"[^"]+' || true
-            echo "$TOKEN_JSON" | grep -Eo '"actions":\[[^]]+\]' || true
-          '''
-        }
+      environment {
+        REGISTRY    = 'harbor.harbor.svc.cluster.local'   // 지금 쓰는 것과 동일하게
+        IMAGE_REPO  = 'project/myapp'                     // 실제 경로
+      }
+      steps {
+        container('kaniko') {
+          withCredentials([usernamePassword(credentialsId: 'harbor-puller', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) { 
+            sh '''
+              set -eux
+              echo "REGISTRY=$REGISTRY IMAGE_REPO=$IMAGE_REPO HUSER=$HUSER"
+  
+              curl -skI "https://${REGISTRY}/v2/" | head -n1
+  
+              TOKEN_JSON=$(curl -sk -u "$HUSER:$HPASS" \
+                "https://${REGISTRY}/service/token?service=harbor-registry&scope=repository:${IMAGE_REPO}:push,pull")
+              echo "$TOKEN_JSON"
+ 
+              echo "$TOKEN_JSON" | grep -Eo '"name":"[^"]+' || true
+              echo "$TOKEN_JSON" | grep -Eo '"actions":\[[^]]+\]' || true
+            '''
+          }
+        } 
       }
     }
-  }
     stage('Update GitOps Repository') {
       steps {
         container('tools') {
