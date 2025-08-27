@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Pod
 spec:
   hostAliases:
-  - ip: "172.18.0.4" 
+  - ip: "172.18.0.3" 
     hostnames: ["harbor.local"]
   containers:
   - name: kaniko
@@ -62,7 +62,7 @@ spec:
     stage('Build & Push to Harbor') {
       steps {
         container('kaniko') {
-          withCredentials([usernamePassword(credentialsId: 'harbor-test', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
+          withCredentials([usernamePassword(credentialsId: 'pullpush', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
             sh '''
               set -eux
 
