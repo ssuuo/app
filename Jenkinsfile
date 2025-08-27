@@ -62,7 +62,7 @@ spec:
     stage('Build & Push to Harbor') {
       steps {
         container('kaniko') {
-          withCredentials([usernamePassword(credentialsId: 'harbor-puller', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
+          withCredentials([usernamePassword(credentialsId: 'harbor-test', usernameVariable: 'HUSER', passwordVariable: 'HPASS')]) {
             sh '''
               set -eux
 
@@ -99,7 +99,7 @@ spec:
     stage('Update GitOps Repository') {
       steps {
         container('tools') {
-          withCredentials([usernamePassword(credentialsId: 'token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
+          withCredentials([usernamePassword(credentialsId: 'git-token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
               set -eux
               apk add --no-cache git curl
