@@ -100,7 +100,7 @@ spec:
     stage('Update GitOps Repository') {
       steps {
         container('tools') {
-          withCredentials([usernamePassword(credentialsId: 'git-token', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
+          withCredentials([usernamePassword(credentialsId: 'gittoken', usernameVariable: 'GUSER', passwordVariable: 'GTOKEN')]) {
             sh '''
               set -eux
               apk add --no-cache git curl
