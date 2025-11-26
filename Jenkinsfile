@@ -39,7 +39,7 @@ spec:
 
   environment {
     REGISTRY      = 'harbor.local:30443'
-    IMAGE_REPO    = 'project/myapp'
+    IMAGE_REPO    = 'testproject/myapp'
     GITOPS_REPO   = 'https://github.com/ssuuo/git.git'
     GITOPS_BRANCH = 'main'
     VALUES_FILE   = 'charts/myapp/values.yaml'
